@@ -1,0 +1,46 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>br.gov.pa.prodepa.pae.tramitacao</groupId>
+	<artifactId>pae-tramitacao-service</artifactId>
+	<version>1.0</version>
+	<packaging>pom</packaging>
+
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-dependencies</artifactId>
+				<type>pom</type>
+				<version>2.4.3</version>
+				<scope>import</scope>
+			</dependency>
+
+			<dependency>
+				<groupId>br.gov.pa.prodepa.pae-common</groupId>
+				<artifactId>pae-common-domain</artifactId>
+				<version>1.0</version>
+			</dependency>
+
+		</dependencies>
+
+	</dependencyManagement>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<configuration>
+					<source>11</source>  <!-- same as <java.version> -->
+					<target>11</target>    <!-- same as <java.version> -->
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+
+	<modules>
+		<module>pae-tramitacao-domain</module>
+	</modules>
+</project>
