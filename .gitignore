@@ -1,7 +1,8 @@
 **/.project
+**/.bin
 **/.springBeans
 **/.factorypath
 **/.classpath
-**/target
+**/target/
 **/.settings
 **/pom.xml.versionsBackup

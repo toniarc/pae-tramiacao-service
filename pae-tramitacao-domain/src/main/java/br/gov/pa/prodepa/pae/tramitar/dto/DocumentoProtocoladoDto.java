@@ -9,8 +9,6 @@ import lombok.Setter;
 @Setter
 public class DocumentoProtocoladoDto {
 
-	private boolean jaFoiTramitado;
-
 	private Long localizacaoOrigemId;
 
 	private Long orgaoDestinoId;
@@ -30,6 +28,8 @@ public class DocumentoProtocoladoDto {
 	private Boolean arquivado;
 	
 	private String tipoDestino;
+
+	private String tipoDocumento;
 
 	private List<Long> usuariosQueDevemAssinar;
 	

@@ -24,6 +24,7 @@ public final class OrgaoPaeDto {
 	private String saidaProcesso;
 	private LocalizacaoBasicDto localizacaoPadraoRecebimento;
 	private Date dataHabilitacao;
+	private Boolean habilitado;
 	
 	public OrgaoPaeDto(){
 	}

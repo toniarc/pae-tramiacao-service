@@ -12,4 +12,6 @@ public interface PaeSuporteService {
 
 	List<OrgaoPaeDto> buscarTodosOsOrgaos();
 
+    LocalizacaoBasicDto buscarLocalizacao(Long localizacaoDestinoId);
+
 }

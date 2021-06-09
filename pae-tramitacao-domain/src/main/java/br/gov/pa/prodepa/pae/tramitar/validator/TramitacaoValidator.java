@@ -11,7 +11,6 @@ import br.gov.pa.prodepa.pae.tramitar.dto.TramitacaoRequestDto;
 import br.gov.pa.prodepa.pae.tramitar.dto.TramitarDocumentoDto;
 import br.gov.pa.prodepa.pae.tramitar.dto.suporte.LocalizacaoBasicDto;
 import br.gov.pa.prodepa.pae.tramitar.dto.suporte.OrgaoPaeDto;
-import br.gov.pa.prodepa.pae.tramitar.port.PaeSuporteService;
 
 public class TramitacaoValidator {
 
@@ -19,26 +18,28 @@ public class TramitacaoValidator {
 	public static final String DOCUMENTO_NULL = "Informe ao menos um documento para ser tramitado";
 	public static final String ANO_OU_NUMERO_DOCUCMENTO_NULL = "Informe o ano e o número do documento para cada documento a ser tramitado";
 	public static final String DOCUMENTO_NAO_ESTA_NO_SETOR_DO_USUARIO = "O documento d%/d% não se encontra no setor do usuário logado";
-	private static final String DOCUMENTO_NAO_ENCONTRADO = "O documento com o número d%/d% não foi encontrado";
-	private static final String ORGAO_DESTINO_NULL = "Informe um órgão de destino para o documento d%/d%";
-	private static final String LOCALIZACAO_DESTINO_NULL = "Informe uma localização de destino para o documento d%/d%";
-	private static final String DOCUMENTO_PENDENCIA_ASSINATURA = "O documento número d%/d% possui pendência de assinatura";
-	private static final String DOCUMENTO_ARQUIVADO = "O documento número d%/d% está arquivado";
+	public static final String DOCUMENTO_NAO_ENCONTRADO = "O documento com o número d%/d% não foi encontrado";
+	public static final String ORGAO_DESTINO_NULL = "Informe um órgão de destino para o documento d%/d%";
+	public static final String LOCALIZACAO_DESTINO_NULL = "Informe uma localização de destino para o documento d%/d%";
+	public static final String DOCUMENTO_PENDENCIA_ASSINATURA = "O documento número d%/d% possui pendência de assinatura";
+	public static final String DOCUMENTO_ARQUIVADO = "O documento número d%/d% está arquivado";
+	public static final String CONFIGURACAO_SAIDA_ORGAO_ORIGEM_INVALIDA = "Tramitação não realizada: De acordo com as configurações do órgão Origem dessa tramitação, o protocolo só pode ser tramitado para outro órgão se estiver num setor de protocolo e o usuário tem perfil de protocolista.";
+	public static final String CONFIGURACAO_ENTRADA_ORGAO_DESTINO_INVALIDA = "Tramitação não realizada: De acordo com as configurações do órgão destino dessa tramitação, a tramitação só poderá ser realizada se o setor destino for setor de protocolo.";
+	public static final String SETOR_DESTINO_IGUAL_SETOR_ORIGEM = "Tramitação não realizada: O Setor Origem e o Setor Destino devem ser diferentes.";
+	public static final String DOCUMENTO_NAO_EH_TIPO_ELETRONICO = "Não foi possível tramitar o documento %d/%d. O documento deve ser do tipo eletrônico.";
+	public static final String ORGAO_DESTINO_NAO_HABILITADO = "Não foi possível tramitar o protocolo %d/%d. O órgão destino não está habilitado.";
 	
 	DomainException de = new DomainException();
 	private TramitacaoRequestDto dto;
-	private PaeSuporteService paeSuporteService;
 	private UsuarioDto usuarioLogado;
 	
-	public TramitacaoValidator(TramitacaoRequestDto dto, PaeSuporteService paeSuporteService, UsuarioDto usuarioLogado) {
+	public TramitacaoValidator(TramitacaoRequestDto dto, UsuarioDto usuarioLogado) {
 		this.dto = dto;
-		this.paeSuporteService = paeSuporteService;
 		this.usuarioLogado = usuarioLogado;
 	}
 
-	public static TramitacaoValidator getInstance(TramitacaoRequestDto dto,  
-			PaeSuporteService paeSuporteService, UsuarioDto usuarioLogado) {
-		return new TramitacaoValidator(dto, paeSuporteService, usuarioLogado);
+	public static TramitacaoValidator getInstance(TramitacaoRequestDto dto, UsuarioDto usuarioLogado) {
+		return new TramitacaoValidator(dto, usuarioLogado);
 	}
 	
 	public TramitacaoValidator validar() {
@@ -77,24 +78,6 @@ public class TramitacaoValidator {
 		return this;
 	}
 
-	public TramitacaoValidator validarSeODestinoFoiInformado() {
-		
-		for(TramitarDocumentoDto t  : dto.getDocumentos()) {
-			if(t.getOrgaoDestinoId() == null) {
-				de.addError(String.format(ORGAO_DESTINO_NULL, t.getDocumentoAno(), t.getDocumentoNumero()));
-			} else {
-				if(t.getOrgaoDestinoId().equals(usuarioLogado.getOrgao().getId())) {
-					//ORGAO DESTINO IGUAL AO ORGAO DO USUARIO LOGADO
-					if(t.getLocalizacaoDestinoId() == null) {
-						de.addError(String.format(LOCALIZACAO_DESTINO_NULL, t.getDocumentoAno(), t.getDocumentoNumero()));
-					}
-				}
-			}
-		}
-		
-		return this;
-	}
-
 	public TramitacaoValidator certificarQueNenhumDocumentoPossuiPendenciaDeAssinatura(DocumentoProtocoladoDto dp) {
 		if(!dp.todosOsUsuariosJaAssinaram()) {
 			de.addError(String.format(DOCUMENTO_PENDENCIA_ASSINATURA, dp.getDocumentoAno(), dp.getDocumentoNumero()));
@@ -122,10 +105,41 @@ public class TramitacaoValidator {
 			if(orgaoOrigem.getSaidaProcesso().equals("SOMENTE_SETOR_DE_PROTOCOLO") && 
 					!localizacaoOrigem.getSetor().getProtocoladora() && 
 					usuarioLogado.hasRole(ApplicationRoles.PROTOCOLISTA)) {
-				de.addError(ANO_OU_NUMERO_DOCUCMENTO_NULL);
+				de.addError(CONFIGURACAO_SAIDA_ORGAO_ORIGEM_INVALIDA);
 			}
 		}
 		
+		return this;
+	}
+
+	public TramitacaoValidator validarConfiguracoesDeEntradaDoOrgaoDestino(ProtocoloDto protocolo, OrgaoPaeDto orgaoDestino, LocalizacaoBasicDto localizacaoDestino) {
+		if(!protocolo.getOrgaoOrigemId().equals(protocolo.getOrgaoDestinoId())) {
+			if(orgaoDestino.getSaidaProcesso().equals("SOMENTE_SETOR_DE_PROTOCOLO") && 
+					!localizacaoDestino.getSetor().getProtocoladora() ) {
+				de.addError(CONFIGURACAO_ENTRADA_ORGAO_DESTINO_INVALIDA);
+			}
+		}
+		return this;
+	}
+
+	public TramitacaoValidator certificarQueOSetorOrigemEhDiferenteDoSetorDestino(ProtocoloDto protocolo) {
+		if(protocolo.getLocalizacaoOrigemId().equals(protocolo.getLocalizacaoDestinoId())){
+			de.addError(SETOR_DESTINO_IGUAL_SETOR_ORIGEM);
+		}
+		return this;
+	}
+
+	public TramitacaoValidator certificarQueOProtocoloEhDoTipoEletronico(DocumentoProtocoladoDto dp) {
+		if(!dp.getTipoDocumento().equals("ELETRONICO")){
+			de.addError(String.format(DOCUMENTO_NAO_EH_TIPO_ELETRONICO, dp.getDocumentoAno(), dp.getDocumentoNumero()));
+		}
+		return this;
+	}
+
+	public TramitacaoValidator certificarQueOrgaoDestinoEstaHabilitado(OrgaoPaeDto orgaoDestino, ProtocoloDto protocolo) {
+		if(orgaoDestino.getHabilitado() == null || !orgaoDestino.getHabilitado()){
+			de.addError(String.format(ORGAO_DESTINO_NAO_HABILITADO, protocolo.getProtocoloAno(), protocolo.getProtocoloNumero()));
+		}
 		return this;
 	}
 	
