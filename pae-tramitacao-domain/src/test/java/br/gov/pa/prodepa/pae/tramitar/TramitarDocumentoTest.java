@@ -34,8 +34,8 @@ public class TramitarDocumentoTest {
 		TramitacaoRequestDto dto = new TramitacaoRequestDto();
 		
 		DomainException de = Assertions.assertThrows(DomainException.class, () -> {
-			TramitacaoValidator.getInstance(dto, null, suporteService, usuarioLogado)
-			.validarCamposObrigatorios()
+			TramitacaoValidator.getInstance(dto, usuarioLogado)
+			//.validarCamposObrigatorios()
 			.validar();
 		});
 		assertTrue(de.getMessage().contains(TramitacaoValidator.DOCUMENTO_NULL));
@@ -55,8 +55,8 @@ public class TramitarDocumentoTest {
 		dto.setDocumentos(Arrays.asList(tdp1));
 		
 		DomainException de = Assertions.assertThrows(DomainException.class, () -> {
-			TramitacaoValidator.getInstance(dto, null, suporteService, usuarioLogado)
-			.validarCamposObrigatorios()
+			TramitacaoValidator.getInstance(dto, usuarioLogado)
+			//.validarCamposObrigatorios()
 			.validar();
 		});
 		assertTrue(de.getMessage().contains(TramitacaoValidator.ANO_OU_NUMERO_DOCUCMENTO_NULL));

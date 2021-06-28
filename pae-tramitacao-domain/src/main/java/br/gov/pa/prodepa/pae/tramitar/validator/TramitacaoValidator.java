@@ -28,6 +28,8 @@ public class TramitacaoValidator {
 	public static final String SETOR_DESTINO_IGUAL_SETOR_ORIGEM = "Tramitação não realizada: O Setor Origem e o Setor Destino devem ser diferentes.";
 	public static final String DOCUMENTO_NAO_EH_TIPO_ELETRONICO = "Não foi possível tramitar o documento %d/%d. O documento deve ser do tipo eletrônico.";
 	public static final String ORGAO_DESTINO_NAO_HABILITADO = "Não foi possível tramitar o protocolo %d/%d. O órgão destino não está habilitado.";
+	private static final String SETOR_DESTINO_INATIVO = "Não foi possível tramitar o protocolo %d/%d: O Setor destino está inativo";
+	private static final String SETOR_DESTINO_NAO_POSSUI_RESPONSAVEL = "Não foi possível tramitar o protocolo %d/%d: O Setor destino não possui responsável.";
 	
 	DomainException de = new DomainException();
 	private TramitacaoRequestDto dto;
@@ -48,14 +50,14 @@ public class TramitacaoValidator {
 	}
 
 	public TramitacaoValidator validarSeOUsuarioInformouAoMenosUmDocumento() {
-		if(dto.getDocumentos() == null || dto.getDocumentos().size() == 0) {
+		if(dto.getDocumentos() == null || dto.getDocumentos().isEmpty()) {
 			de.addError(DOCUMENTO_NULL);
 		}
 		return this;
 	}
 	
 	public TramitacaoValidator validarSeOAnoENumeroDeProtocoloForamInformados() {
-		if(dto.getDocumentos() != null && dto.getDocumentos().size() > 0) {
+		if(dto.getDocumentos() != null && dto.getDocumentos().isEmpty()) {
 			for(TramitarDocumentoDto t : dto.getDocumentos()) {
 				if(t.getDocumentoAno() == null || t.getDocumentoAno() == 0 
 						|| t.getDocumentoNumero() == null || t.getDocumentoNumero() == 0) {
@@ -79,14 +81,14 @@ public class TramitacaoValidator {
 	}
 
 	public TramitacaoValidator certificarQueNenhumDocumentoPossuiPendenciaDeAssinatura(DocumentoProtocoladoDto dp) {
-		if(!dp.todosOsUsuariosJaAssinaram()) {
+		if(!Boolean.TRUE.equals(dp.todosOsUsuariosJaAssinaram())) {
 			de.addError(String.format(DOCUMENTO_PENDENCIA_ASSINATURA, dp.getDocumentoAno(), dp.getDocumentoNumero()));
 		}
 		return this;
 	}
 
 	public TramitacaoValidator certificarQueNenhumDocumentoFoiArquivado(DocumentoProtocoladoDto dp) {
-		if(dp.getArquivado()) {
+		if(Boolean.TRUE.equals(dp.getArquivado())) {
 			de.addError(String.format(DOCUMENTO_ARQUIVADO, dp.getDocumentoAno(), dp.getDocumentoNumero()));
 		}
 		return this;
@@ -101,23 +103,20 @@ public class TramitacaoValidator {
 	
 	public TramitacaoValidator validarConfiguracoesDeSaidaDoOrgaoOrigem(ProtocoloDto protocolo, OrgaoPaeDto orgaoOrigem, LocalizacaoBasicDto localizacaoOrigem) {
 		
-		if(!protocolo.getOrgaoOrigemId().equals(protocolo.getOrgaoDestinoId())) {
-			if(orgaoOrigem.getSaidaProcesso().equals("SOMENTE_SETOR_DE_PROTOCOLO") && 
-					!localizacaoOrigem.getSetor().getProtocoladora() && 
-					usuarioLogado.hasRole(ApplicationRoles.PROTOCOLISTA)) {
-				de.addError(CONFIGURACAO_SAIDA_ORGAO_ORIGEM_INVALIDA);
-			}
+		if( orgaoOrigemEhDiferenteDoOrgaoDestino(protocolo) 
+				&& saidaDeProcessoEhSomentePorSetorDeProtocolo(orgaoOrigem) 
+				&& (setorNaoEhSetorDeProtocolo(localizacaoOrigem) || usuarioLogadoNaoEhProtocolista())) {
+			de.addError(CONFIGURACAO_SAIDA_ORGAO_ORIGEM_INVALIDA);
 		}
 		
 		return this;
 	}
 
 	public TramitacaoValidator validarConfiguracoesDeEntradaDoOrgaoDestino(ProtocoloDto protocolo, OrgaoPaeDto orgaoDestino, LocalizacaoBasicDto localizacaoDestino) {
-		if(!protocolo.getOrgaoOrigemId().equals(protocolo.getOrgaoDestinoId())) {
-			if(orgaoDestino.getSaidaProcesso().equals("SOMENTE_SETOR_DE_PROTOCOLO") && 
-					!localizacaoDestino.getSetor().getProtocoladora() ) {
-				de.addError(CONFIGURACAO_ENTRADA_ORGAO_DESTINO_INVALIDA);
-			}
+		if( orgaoOrigemEhDiferenteDoOrgaoDestino(protocolo) &&
+				entradaDeProcessoEhSomentePorSetorDeProtocolo(orgaoDestino) && 
+				setorNaoEhSetorDeProtocolo(localizacaoDestino) ) {
+			de.addError(CONFIGURACAO_ENTRADA_ORGAO_DESTINO_INVALIDA);
 		}
 		return this;
 	}
@@ -142,5 +141,46 @@ public class TramitacaoValidator {
 		}
 		return this;
 	}
+
+	public TramitacaoValidator certificarQueOSetorDestinoEstaAtivo(LocalizacaoBasicDto localizacaoDestino, ProtocoloDto protocolo) {
+		if(!Boolean.TRUE.equals(localizacaoDestino.getAtivo())){
+			de.addError(String.format(SETOR_DESTINO_INATIVO, protocolo.getProtocoloAno(), protocolo.getProtocoloNumero()));
+		}
+		return this;
+	}
+
+	public TramitacaoValidator certificarQueOSetorDestinoPossuiResponsavel(LocalizacaoBasicDto localizacaoDestino, ProtocoloDto protocolo) {
+		if(localizacaoDestino.getResponsavel() == null || localizacaoDestino.getResponsavel().getId() == null){
+			de.addError(String.format(SETOR_DESTINO_NAO_POSSUI_RESPONSAVEL, protocolo.getProtocoloAno(), protocolo.getProtocoloNumero()));
+		}
+		return this;
+	}
+
+	public TramitacaoValidator certificarQueODocumentoAindaSeEncontraNoSetorOrigem(DocumentoProtocoladoDto documentoProtocolado) {
+
+		return this;
+	}
+
+	private boolean orgaoOrigemEhDiferenteDoOrgaoDestino(ProtocoloDto protocolo) {
+		return !protocolo.getOrgaoOrigemId().equals(protocolo.getOrgaoDestinoId());
+	}
+
+	private boolean saidaDeProcessoEhSomentePorSetorDeProtocolo(OrgaoPaeDto orgaoOrigem) { 
+		return orgaoOrigem.getSaidaProcesso().equals("SOMENTE_SETOR_DE_PROTOCOLO");
+	}
+
+	private boolean setorNaoEhSetorDeProtocolo(LocalizacaoBasicDto localizacao) {  
+		return !Boolean.TRUE.equals(localizacao.getSetor().getProtocoladora());
+	}
+
+	private boolean usuarioLogadoNaoEhProtocolista() {
+		return !usuarioLogado.hasRole(ApplicationRoles.PROTOCOLISTA);
+	}
 	
+	private boolean entradaDeProcessoEhSomentePorSetorDeProtocolo(OrgaoPaeDto orgaoDestino) {
+		return orgaoDestino.getEntradaProcesso().equals("SOMENTE_SETOR_DE_PROTOCOLO");
+	}
+
+	
+
 }

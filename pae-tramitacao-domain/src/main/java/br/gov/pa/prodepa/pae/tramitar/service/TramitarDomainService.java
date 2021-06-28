@@ -52,12 +52,12 @@ public class TramitarDomainService {
 		List<OrgaoPaeDto> orgaos = suporteService.buscarTodosOsOrgaos();
 		List<LocalizacaoBasicDto> localizacoesUsuario = suporteService.buscarLocalizacoesUsuario(usuarioLogado);
 
-		List<DocumentoProtocoladoDto> documentosSemTramitacao = new ArrayList<DocumentoProtocoladoDto>();
-		List<DocumentoProtocoladoDto> documentosComTramitacao = new ArrayList<DocumentoProtocoladoDto>();
+		List<DocumentoProtocoladoDto> documentosSemTramitacao = new ArrayList<>();
+		List<DocumentoProtocoladoDto> documentosComTramitacao = new ArrayList<>();
 
 		for (DocumentoProtocoladoDto documentoProtocolado : documentosProtocolados) {
 
-			if (documentoProtocolado.getTramitado()) {
+			if (Boolean.TRUE.equals(documentoProtocolado.getTramitado())) {
 				documentosComTramitacao.add(documentoProtocolado);
 			} else {
 				documentosSemTramitacao.add(documentoProtocolado);
@@ -70,11 +70,9 @@ public class TramitarDomainService {
 
 		validator.validar();
 
-		//confirmarTodosOsAnexosAssinadosENaoConfirmados(tramitacoes);
+		// confirmarTodosOsAnexosAssinadosENaoConfirmados(tramitacoes);
+		// marcarTodosOsDocumentosProtocoladosComoTramitados 
 
-		// .certificarQueOSetorDestinoEstaAtivo()
-		// .certificarQueOSetorDestinoPossuiResponsavel()
-		// .certificarQueODocumentoAindaSeEncontraNoSetorOrigem()
 		// .certificarQueODocumentoAindaSeEncontraNoSetorDaUltimaTramitacao()
 	}
 
@@ -111,7 +109,9 @@ public class TramitarDomainService {
 					.certificarQueOSetorOrigemEhDiferenteDoSetorDestino(protocolo)
 					.validarConfiguracoesDeSaidaDoOrgaoOrigem(protocolo, orgaoOrigem, localizacaoOrigem)
 					.validarConfiguracoesDeEntradaDoOrgaoDestino(protocolo, orgaoDestino, localizacaoDestino)
-					.certificarQueOrgaoDestinoEstaHabilitado(orgaoDestino, protocolo);
+					.certificarQueOrgaoDestinoEstaHabilitado(orgaoDestino, protocolo)
+					.certificarQueOSetorDestinoEstaAtivo(localizacaoDestino, protocolo)
+					.certificarQueOSetorDestinoPossuiResponsavel(localizacaoDestino, protocolo);
 
 				Tramitacao t = Tramitacao.builder()
 					.anotacao(documentoTramitado.getAnotacao())

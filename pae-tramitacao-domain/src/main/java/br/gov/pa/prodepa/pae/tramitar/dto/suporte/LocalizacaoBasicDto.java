@@ -13,5 +13,6 @@ public class LocalizacaoBasicDto {
 	private Long id;
 	private UsuarioBasicDto responsavel;
 	private SetorBasicDto setor;
+	private Boolean ativo;
 	
 }
