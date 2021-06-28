@@ -70,7 +70,9 @@ public class TramitarDomainService {
 
 		validator.validar();
 
-		// confirmarTodosOsAnexosAssinadosENaoConfirmados(tramitacoes);
+		tramitacaoRepository.save(tramitacoes);
+
+		//confirmarTodosOsAnexosAssinadosENaoConfirmados(tramitacoes);
 		// marcarTodosOsDocumentosProtocoladosComoTramitados 
 
 		// .certificarQueODocumentoAindaSeEncontraNoSetorDaUltimaTramitacao()
